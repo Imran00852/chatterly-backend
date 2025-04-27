@@ -127,23 +127,19 @@ export const acceptFriendRequest = TryCatch(async (req, res, next) => {
   const request = await Request.findById(requestId)
     .populate("sender", "name")
     .populate("receiver", "name");
-
   if (!request) return next(new ErrorHandler("Request not found!", 404));
-
   if (request.receiver._id.toString() !== req.user._id.toString())
     return next(
       new ErrorHandler("You are not authorized to accept this request!", 403)
     );
 
   if (!accept) {
-    console.log("Rejecting request with ID:", requestId);
-    await request.deleteOne();
+    await Request.deleteOne();
     return res.status(200).json({
       success: true,
       message: "Friend request rejected!",
     });
   }
-
   const members = [request.sender._id, request.receiver._id];
 
   await Promise.all([
@@ -153,7 +149,6 @@ export const acceptFriendRequest = TryCatch(async (req, res, next) => {
     }),
     request.deleteOne(),
   ]);
-
   emitEvent(req, REFETCH_CHATS, members);
 
   return res.status(200).json({
