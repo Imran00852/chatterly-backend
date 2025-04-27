@@ -124,6 +124,8 @@ export const sendFriendRequest = TryCatch(async (req, res, next) => {
 
 export const acceptFriendRequest = TryCatch(async (req, res, next) => {
   const { requestId, accept } = req.body;
+  const isAccept = accept === true || accept === "true";
+
   const request = await Request.findById(requestId)
     .populate("sender", "name")
     .populate("receiver", "name");
@@ -133,13 +135,15 @@ export const acceptFriendRequest = TryCatch(async (req, res, next) => {
       new ErrorHandler("You are not authorized to accept this request!", 403)
     );
 
-  if (!accept) {
-    await Request.deleteOne();
+  if (!isAccept) {
+    const result = await Request.deleteOne({ _id: requestId });
+    operation;
     return res.status(200).json({
       success: true,
       message: "Friend request rejected!",
     });
   }
+
   const members = [request.sender._id, request.receiver._id];
 
   await Promise.all([
